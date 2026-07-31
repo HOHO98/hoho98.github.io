@@ -216,6 +216,8 @@
 [data-theme="dark"] .clip-row .cm{background:var(--surf-2);color:var(--ink-2)}
 [data-theme="dark"] .clip-row:active{background:var(--surf)}
 .spot{content-visibility:auto;contain-intrinsic-size:auto 520px}
+.spot.jumped{animation:spotHl 2s ease}
+@keyframes spotHl{0%,55%{box-shadow:0 0 0 3px var(--coral), var(--sh)}100%{box-shadow:var(--sh)}}
 .morebtn{display:block;width:100%;border:1px solid var(--line);background:var(--paper);
   color:var(--sea-d);border-radius:var(--r);padding:14px;font-size:14px;font-weight:800;
   margin:4px 0 10px;box-shadow:var(--sh-s)}
@@ -6471,6 +6473,8 @@ function flushGm(ok){ while(__gmQueue.length) __gmQueue.shift()(ok); }
 
   /* --- 화면 --- */
   let mode="list", cat="all", q="", pinSel=-1;
+  const STEP=12;
+  let shown=STEP;        /* 목록에 지금 몇 개까지 그려져 있는지 */
 
   function shell(){
     el.innerHTML = `
@@ -6582,8 +6586,6 @@ function flushGm(ok){ while(__gmQueue.length) __gmQueue.shift()(ok); }
         ${fchips()}
       </div><div id="spotList"></div>`;
     const list=$("#spotList");
-    const STEP=12;
-    let shown=STEP;
     const paint=(reset)=>{
       if(reset) shown=STEP;
       const rows=filtered();
@@ -6799,11 +6801,17 @@ function flushGm(ok){ while(__gmQueue.length) __gmQueue.shift()(ok); }
     if(idx<0) return false;
     const tab = $('#tabs button[data-t="spots"]');
     if(tab) tab.click();
-    mode="list"; cat="all"; q=""; shell(); draw();
-    setTimeout(()=>{
+    mode="list"; cat="all"; q="";
+    shown = Math.max(STEP, idx+1);      /* 목표 카드까지 펼쳐 놓는다 */
+    shell(); draw();
+    const focus=(tries)=>{
       const c=document.getElementById("sp"+idx);
-      if(c && c.scrollIntoView) c.scrollIntoView({behavior:"smooth",block:"center"});
-    },80);
+      if(!c){ if(tries>0) return setTimeout(()=>focus(tries-1),70); return; }
+      if(c.scrollIntoView) c.scrollIntoView({behavior:"smooth",block:"center"});
+      c.classList.add("jumped");
+      setTimeout(()=>c.classList.remove("jumped"),2000);
+    };
+    setTimeout(()=>focus(8),90);
     return true;
   };
   shell(); draw();
