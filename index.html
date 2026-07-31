@@ -6804,12 +6804,28 @@ function flushGm(ok){ while(__gmQueue.length) __gmQueue.shift()(ok); }
     mode="list"; cat="all"; q="";
     shown = Math.max(STEP, idx+1);      /* 목표 카드까지 펼쳐 놓는다 */
     shell(); draw();
+    /* 화면 밖 카드는 브라우저가 크기를 어림잡고 있어서, 스크롤하면 그때 실제 크기가 잡히며
+       위치가 밀립니다. 그래서 '스크롤 → 다시 재기'를 자리가 잡힐 때까지 반복합니다. */
     const focus=(tries)=>{
       const c=document.getElementById("sp"+idx);
       if(!c){ if(tries>0) return setTimeout(()=>focus(tries-1),70); return; }
-      if(c.scrollIntoView) c.scrollIntoView({behavior:"smooth",block:"center"});
-      c.classList.add("jumped");
-      setTimeout(()=>c.classList.remove("jumped"),2000);
+      const hd=document.querySelector("header.top");
+      const gap=((hd&&hd.offsetHeight)?hd.offsetHeight:100)+12;
+      const de=document.documentElement, prev=de.style.scrollBehavior;
+      de.style.scrollBehavior="auto";
+      const settle=(n)=>{
+        const r=c.getBoundingClientRect();
+        const now=window.pageYOffset||de.scrollTop||0;
+        const want=Math.max(0, now + r.top - gap);
+        if(n>0 && Math.abs(now-want)>4){
+          window.scrollTo(0, want);
+          return setTimeout(()=>settle(n-1), 90);
+        }
+        de.style.scrollBehavior=prev||"";
+        c.classList.add("jumped");
+        setTimeout(()=>c.classList.remove("jumped"),2200);
+      };
+      settle(12);
     };
     setTimeout(()=>focus(8),90);
     return true;
