@@ -5187,17 +5187,29 @@ function hwEta(origin, spots){
 }
 
 /* ---------- 히어로 위젯 렌더 ---------- */
+/* u = 주소 · pkg = 안드로이드 패키지명(있으면 앱으로 먼저 열고, 없으면 웹으로 폴백)
+   아이폰은 유니버설 링크라 앱이 깔려 있으면 주소만으로 앱이 열립니다 */
 const APPS=[
-  {n:"VJW",     e:"🛂", u:"https://services.digital.go.jp/en/visit-japan-web/"},
-  {n:"트리플",   e:"🧳", u:"https://triple.guide/"},
-  {n:"파파고",   e:"🦜", u:"https://papago.naver.com/?sk=ko&tk=ja"},
-  {n:"구글맵",   e:"🗺", u:"https://maps.google.com/"},
-  {n:"구글번역", e:"🌐", u:"https://translate.google.com/?sl=ko&tl=ja&op=translate"},
-  {n:"토스",     e:"💳", u:"https://toss.im/"},
-  {n:"네이버페이",e:"🇳", u:"https://new-m.pay.naver.com/"},
-  {n:"카카오페이",e:"🇰", u:"https://pay.kakao.com/"},
-  {n:"기상청",   e:"🌀", u:"https://www.jma.go.jp/bosai/map.html"}
+  {n:"VJW",      e:"🛂", u:"https://www.vjw.digital.go.jp/main/#/vjwplo001"},
+  {n:"트리플",    e:"🧳", u:"https://triple.guide/",  pkg:"com.titicacacorp.triple"},
+  {n:"파파고",    e:"🦜", u:"https://papago.naver.com/?sk=ko&tk=ja", pkg:"com.naver.labs.translator"},
+  {n:"구글맵",    e:"🗺", u:"https://maps.google.com/", pkg:"com.google.android.apps.maps"},
+  {n:"구글번역",  e:"🌐", u:"https://translate.google.com/?sl=ko&tl=ja&op=translate",
+                          pkg:"com.google.android.apps.translate"},
+  {n:"토스",      e:"💳", u:"https://toss.im/",       pkg:"viva.republica.toss"},
+  {n:"네이버페이", e:"🇳", u:"https://new-m.pay.naver.com/", pkg:"com.nhnent.payapp"},
+  {n:"카카오페이", e:"🇰", u:"https://www.kakaopay.com/",     pkg:"com.kakaopay.app"},
+  {n:"기상청",    e:"🌀", u:"https://www.jma.go.jp/bosai/map.html"}
 ];
+
+/* 안드로이드는 intent:// 로 앱을 먼저 시도하고, 없으면 자동으로 웹으로 떨어집니다 */
+const IS_AOS = /android/i.test((navigator.userAgent||""));
+function appHref(a){
+  if(!IS_AOS || !a.pkg) return a.u;
+  const bare=a.u.replace(/^https?:\/\//,"");
+  return "intent://"+bare+"#Intent;scheme=https;package="+a.pkg+
+         ";S.browser_fallback_url="+encodeURIComponent(a.u)+";end";
+}
 
 function hwHtml(){
   const now=new Date(), two=n=>String(n).padStart(2,"0");
@@ -5317,7 +5329,8 @@ function hwHtml(){
     ${near}
     <div class="hw-sec">자주 쓰는 앱</div>
     <div class="hw-apps">${APPS.map(a=>
-      `<a href="${esc(a.u)}" target="_blank" rel="noopener"><span>${a.e}</span>${esc(a.n)}</a>`).join("")}</div>
+      `<a href="${esc(appHref(a))}"${IS_AOS&&a.pkg?"":' target="_blank" rel="noopener"'}
+         ><span>${a.e}</span>${esc(a.n)}</a>`).join("")}</div>
   </div>`;
 }
 
